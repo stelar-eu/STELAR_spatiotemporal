@@ -1,5 +1,4 @@
 # Personal ignores
-*.ipynb
 aois/
 /*.sh
 /*.txt
