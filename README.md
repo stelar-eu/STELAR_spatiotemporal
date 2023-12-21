@@ -6,7 +6,7 @@ This package is part of the EU STELAR project and provides tools for processing 
 
 To install the package, simply run:
 ```
-pip install git+https://github.com/JdHondt/STELAR_spatiotemporal.git@master
+pip install git+https://github.com/stelar-eu/STELAR_spatiotemporal.git@master
 ```
 
 ## Usage
