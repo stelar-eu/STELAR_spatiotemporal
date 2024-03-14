@@ -308,7 +308,7 @@ def field_to_df(field:Polygon, tiff_path:str, datetimes:list):
     values = field_to_ts(field, src)
 
     # Create df
-    df = pd.DataFrame(data=[values], columns=[datetimes])
+    df = pd.DataFrame(data=[values], columns=datetimes)
 
     # Sort columns by date
     df.sort_index(axis=1, inplace=True)

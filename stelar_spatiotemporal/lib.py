@@ -240,6 +240,6 @@ def get_s3_filesystem(path:str):
 
 def get_local_filesystem(path:str):
     # If path is a file, return the directory
-    if os.path.isfile(path):
+    if os.path.isfile(path) or '.' in os.path.basename(path):
         path = os.path.dirname(path)
     return LocalFileSystem(path)
