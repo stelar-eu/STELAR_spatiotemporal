@@ -1,13 +1,29 @@
 from stelar_spatiotemporal.lib import get_filesystem
-
+from stelar_spatiotemporal.preprocessing.preprocessing import split_array_into_patchlets
+from stelar_spatiotemporal.preprocessing.vista_preprocessing import unpack_ras, get_rhd_info
+import os
+import glob
+import numpy as np
 
 if __name__ == "__main__":
-    DATADIR = "/home/jens/ownCloud/Documents/3.Werk/0.TUe_Research/0.STELAR/0.VISTA/VISTA_workbench/data/pipeline_example"
-    fs = get_filesystem(DATADIR)
+    ras_path = "s3://stelar-spatiotemporal/RGB_small/B2/30TYQ_B2_2020.RAS"
+    rhd_path = "s3://stelar-spatiotemporal/RGB_small/B2/30TYQ_B2_2020.RHD"
 
-    files = fs.glob(DATADIR + "/**/*.RAS")
+    os.environ["MINIO_ACCESS_KEY"] = "minioadmin"
+    os.environ["MINIO_SECRET_KEY"] = "minioadmin"
+    os.environ["MINIO_ENDPOINT_URL"] = 'http://localhost:9000'
 
-    for file in files:
-        with fs.open(file, "rb") as f:
-            print(f.read(10))
+    img_h, img_w, timestamps, bbox = get_rhd_info(rhd_path)
+
+    # Unpack
+    # unpack_ras(ras_path, "/tmp", timestamps, img_w, img_h)
+
+    files = glob.glob("/tmp/*.npy")
+
+    # Split into patchlets
+    patchlets = split_array_into_patchlets(files[0], patchlet_size=(1128,1128), buffer=0)
+
+
+
+    
 

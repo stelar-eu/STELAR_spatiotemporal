@@ -49,7 +49,7 @@ def df_to_csv_manual(df: pd.DataFrame, outpath:str, index:bool=True, header:bool
             if index:
                 index_name = df.index.name if df.index.name is not None else 'index'
                 f.write(index_name + ',')
-            f.write(','.join(df.columns) + '\n')
+            f.write(','.join(df.columns.astype(str)) + '\n')
         for i in range(len(df)):
             if index:
                 f.write(str(df.index[i]) + ',')
