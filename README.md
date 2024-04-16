@@ -27,3 +27,8 @@ This package is licensed under the MIT License. See the LICENSE file for details
 
 ## Contact
 If you have any questions, please contact [Jens D'hondt](mailto:j.e.d.hondt@tue.nl).
+
+## Contributors
+- Jens D'hondt (Eindhoven University of Technology)
+- Giorgos Chatzigeorgakidis (Athena Research Center)
+- Christoph Joerges (VISTA GmbH)
