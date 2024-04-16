@@ -13,19 +13,18 @@ if __name__ == "__main__":
     os.environ["MINIO_ENDPOINT_URL"] = 'http://localhost:9000'
 
     tiffdir = "s3://stelar-spatiotemporal/LAI_fused"
-    ref_path = "s3://stelar-spatiotemporal/S2_30TYQMTI_200106_IC_DEMO.tif"
-
-    outdir = "s3://stelar-spatiotemporal"
+    # ref_path = "s3://stelar-spatiotemporal/S2_30TYQMTI_200106_IC_DEMO.tif"
+    outdir = "/tmp/lai"
     # os.makedirs(outdir, exist_ok=True)
 
-    fs = get_filesystem(tiffdir)
+    # fs = get_filesystem(tiffdir)
 
-    tiff_files = fs.glob(tiffdir + "/*.TIF")
+    # tiff_files = fs.glob(tiffdir + "/*.TIF")
 
-    for tiff_file in tiff_files:
-        outpath = os.path.join(outdir, os.path.basename(tiff_file))
-        reproj2base(tiff_file, ref_path, outpath)
+    # for tiff_file in tiff_files:
+    #     outpath = os.path.join(outdir, os.path.basename(tiff_file))
+    #     reproj2base(tiff_file, ref_path, outpath)
         
-    print("Done")
+    # print("Done")
 
-    # unpack_tif(input_path, outdir, extension="TIF")
+    unpack_tif(tiffdir, outdir, extension="TIF")

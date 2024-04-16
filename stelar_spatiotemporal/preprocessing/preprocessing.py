@@ -440,6 +440,8 @@ def unpack_tif(indir: str, outdir:str, extension:str = 'tiff'):
     if len(paths) == 0:
         raise ValueError("No {} files found in the input folder.".format(extension))
     
+    os.makedirs(outdir, exist_ok=True)
+    
     # Unpack the TIF files and save to npy
     print(f"Unpacking {len(paths)} files...")
     gbbox = None
