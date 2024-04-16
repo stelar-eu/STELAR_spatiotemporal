@@ -14,8 +14,11 @@ from skimage.morphology import disk
 import rasterio
 import os
 import pandas as pd
-from sentinelhub import BBox
+from sentinelhub import BBox, CRS
 import pickle
+from rasterio.io import MemoryFile
+import re
+import datetime as dt
 
 from .io import LocalFileSystem, S3FileSystem
 from .eolearn.core import EOPatch
@@ -69,6 +72,35 @@ def fetch_image(url: str) -> np.ndarray:
     arr = np.array(img)
     
     return arr
+
+def open_rasterio(path:str):
+    """Open a rasterio dataset"""
+    fs = get_filesystem(path)
+    with fs.open(path, 'rb') as f:
+        return rasterio.open(f)
+    # return MemoryFile(fs.open(path, 'rb')).open()
+    
+def get_rasterio_bbox(src:rasterio.DatasetReader):
+    bbox = rasterio.transform.array_bounds(src.height, src.width, src.transform)
+    crs = CRS(src.crs.to_string())
+    return BBox(bbox, crs)
+
+def get_rasterio_timestamps(src:rasterio.DatasetReader, path:str):
+    # See if there are timestamps in the metadata in format YYYYMMDD
+    timestamps = src.tags().get("TIFFTAG_DATETIME").split(" ") if "TIFFTAG_DATETIME" in src.tags() else None
+
+    if timestamps is None and src.count == 1:
+        # Check if there is a timestamp in the filename in the format YYYYMMDD
+        filename = os.path.basename(path)
+        timestamps = re.search(r"\d{8}", filename)
+        if timestamps:
+            timestamps = [timestamps.group()]
+
+    if not timestamps:
+        raise ValueError("No timestamps found in the metadata or the filename.")
+
+    # Parse the timestamps
+    return [dt.datetime.strptime(timestamp, "%Y%m%d") for timestamp in timestamps]
 
 def multiprocess_map(func: Callable, object_list: list, n_jobs:int = 4, **kwargs: dict):
     """

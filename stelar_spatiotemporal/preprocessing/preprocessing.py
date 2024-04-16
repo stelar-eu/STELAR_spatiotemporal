@@ -1,4 +1,4 @@
-from ..lib import fetch_image, check_types
+from ..lib import *
 import datetime as dt
 import pystac
 from pystac_client import Client
@@ -13,7 +13,9 @@ import shutil
 from sentinelhub import CRS, BBox
 from ..eolearn.core import EOPatch, OverwritePermission, FeatureType
 from ..eopatch_functions import data_to_eopatch
-
+import rasterio
+from rasterio.io import MemoryFile
+import re
 
 def fetch_s2_images(startdate: dt.datetime, enddate: dt.datetime, 
                     aoi: Geometry, max_cloud_cover:int = 100, limit: int = 100) -> pystac.ItemCollection:
@@ -431,5 +433,51 @@ def combine_dates_for_eopatch(eop_name: str, eop_paths:list, outdir:str = None, 
     # Save the combined patchlet
     eopatch.save(os.path.join(outdir, eop_name), overwrite_permission=OverwritePermission.OVERWRITE_PATCH)
 
+def unpack_tif(indir: str, outdir:str, extension:str = 'tiff'):
+    fs = get_filesystem(indir)
+    paths = fs.glob(os.path.join(indir, "*.{}".format(extension)))
 
+    if len(paths) == 0:
+        raise ValueError("No {} files found in the input folder.".format(extension))
+    
+    # Unpack the TIF files and save to npy
+    print(f"Unpacking {len(paths)} files...")
+    gbbox = None
+    for path in paths:
+        # Open the raster
+        try:
+            with open_rasterio(path) as src:
+                bbox = get_rasterio_bbox(src)
 
+                # Check if the bbox is the same for all images
+                if not gbbox:
+                    gbbox = bbox
+                elif bbox != gbbox:
+                    # print(bbox, gbbox)
+                    raise ValueError("Bounding boxes of the images do not match.")
+                
+                timestamps = get_rasterio_timestamps(src, path)
+
+                if len(timestamps) != src.count:
+                    raise ValueError("Number of timestamps does not match number of bands")
+
+                # Read each of the images and save them to npy
+                for i,timestamp in enumerate(timestamps):
+                    try:
+                        img = src.read(i+1)
+                    except Exception as e:
+                        print(f"Error reading {path}: {e}")
+                        continue
+
+                    img.squeeze()
+
+                    # Save the image to npy
+                    npy_path = os.path.join(outdir, "{}.npy".format(timestamp.strftime("%Y_%m_%d")))
+                    np.save(npy_path, img)
+        except Exception as e:
+            print(f"Error processing {path}: {e}")
+            continue
+
+    # Save the bbox
+    bbox_path = os.path.join(outdir, "bbox.pkl")
+    save_bbox(bbox, bbox_path)
