@@ -16,7 +16,6 @@ To use the package, import it in your Python code:
 ```python
 import stelar_spatiotemporal
 ```
-
 Then, you can use the various functions provided by the package to process your spatiotemporal data.
 
 ## Contributing
