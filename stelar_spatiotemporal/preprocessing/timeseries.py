@@ -91,10 +91,10 @@ def extract_px_timeseries(eopatch:EOPatch, outpath:str = None, band:str='LAI') -
     if not outpath.endswith(".csv"):
           outpath += ".csv"
 
-    append = os.path.exists(outpath)
-    write_mode = "a" if append else "w"
-    batch = not append
-    df_to_csv_manual(df, outpath, index=True, header=batch, mode=write_mode)
+    fs = get_filesystem(outpath)
+    exists = fs.exists(outpath)
+    wmode = "w" if not exists else "a"
+    df_to_csv_manual(df, outpath, index=True, mode=wmode, header=(wmode=="w"))
 
 
 def lai_to_csv_px(eop_paths:list, patchlet_dir:str, outdir:str, n_jobs:int=16, delete_patchlets:bool=True):
@@ -209,34 +209,34 @@ def combine_timeseries(csv_paths:list, startdate: dt.datetime, enddate: dt.datet
 
 
 def combine_timeseries_px(csv_paths:list, startdate: dt.datetime, enddate: dt.datetime, n: int, n_jobs:int = 8, out_path: str = None) -> pd.DataFrame:
-        df = combine_timeseries(csv_paths, startdate, enddate, n, n_jobs)
+    df = combine_timeseries(csv_paths, startdate, enddate, n, n_jobs)
 
-        pnames = []
-        x_coords = []
-        y_coords = []
+    pnames = []
+    x_coords = []
+    y_coords = []
 
-        for path in csv_paths[:n]:
-                path_parts = path.split(os.sep)
-                pnames.append(path_parts[-3])
-                x_coords.append(int(path_parts[-2]))
-                y_coords.append(int(path_parts[-1].replace(".csv","")))
+    for path in csv_paths[:n]:
+        path_parts = path.split(os.sep)
+        pnames.append(path_parts[-3])
+        x_coords.append(int(path_parts[-2]))
+        y_coords.append(int(path_parts[-1].replace(".csv","")))
 
-        df["patch"] = pnames
-        df["x"] = x_coords
-        df["y"] = y_coords
+    df["patch"] = pnames
+    df["x"] = x_coords
+    df["y"] = y_coords
 
-        # Set the index to the patch name and the x and y coordinates
-        df.set_index(["patch", "x", "y"], inplace=True)
+    # Set the index to the patch name and the x and y coordinates
+    df.set_index(["patch", "x", "y"], inplace=True)
 
-        # Sort the columns by date
-        df.sort_index(axis=1, inplace=True)
+    # Sort the columns by date
+    df.sort_index(axis=1, inplace=True)
 
-        if out_path is None:
-                return df
-        else:
-                print(f"Saving dataframe to {out_path}")
-                df.to_csv(out_path, index=True)
-                return None
+    if out_path is None:
+        return df
+    else:
+        print(f"Saving dataframe to {out_path}")
+        df.to_csv(out_path, index=True)
+        return None
 
 # Load a file of fields if possible
 def load_fields(field_path:str, nrows:int = None, min_area:int = 0, max_area:int = 500000):
@@ -338,7 +338,9 @@ def field_to_csv(fields:gpd.GeoDataFrame, tiff_path:str,
         outpath += ".csv"
 
     # Append df to field_ts csv if exists
-    wmode = "w" if not os.path.exists(outpath) else "a"
+    fs = get_filesystem(outpath)
+    exists = fs.exists(outpath)
+    wmode = "w" if not exists else "a"
     df_to_csv_manual(df, outpath, index=True, mode=wmode, header=(wmode=="w"))
 
 
