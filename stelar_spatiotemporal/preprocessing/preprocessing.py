@@ -445,37 +445,34 @@ def unpack_tif(indir: str, outdir:str, extension:str = 'tiff'):
     # Unpack the TIF files and save to npy
     print(f"Unpacking {len(paths)} files...")
     gbbox = None
-    for path in paths:
+    for i,path in enumerate(paths):
+        print(f"Processing {i+1}/{len(paths)}", end="\r")
+
         # Open the raster
         try:
-            with open_rasterio(path) as src:
-                bbox = get_rasterio_bbox(src)
+            img, profile = open_rasterio(path)
+            bbox = get_rasterio_bbox(profile)
 
-                # Check if the bbox is the same for all images
-                if not gbbox:
-                    gbbox = bbox
-                elif bbox != gbbox:
-                    # print(bbox, gbbox)
-                    raise ValueError("Bounding boxes of the images do not match.")
-                
-                timestamps = get_rasterio_timestamps(src, path)
+            # Check if the bbox is the same for all images
+            if not gbbox:
+                gbbox = bbox
+            elif bbox != gbbox:
+                # print(bbox, gbbox)
+                raise ValueError("Bounding boxes of the images do not match.")
+            
+            timestamps = get_rasterio_timestamps(profile, path)
 
-                if len(timestamps) != src.count:
-                    raise ValueError("Number of timestamps does not match number of bands")
+            if len(timestamps) != img.shape[0]:
+                raise ValueError("Number of timestamps does not match number of bands")
 
-                # Read each of the images and save them to npy
-                for i,timestamp in enumerate(timestamps):
-                    try:
-                        img = src.read(i+1)
-                    except Exception as e:
-                        print(f"Error reading {path}: {e}")
-                        continue
+            # Read each of the images and save them to npy
+            for i,timestamp in enumerate(timestamps):
+                imgi = img[i]
+                imgi = imgi.squeeze()
 
-                    img.squeeze()
-
-                    # Save the image to npy
-                    npy_path = os.path.join(outdir, "{}.npy".format(timestamp.strftime("%Y_%m_%d")))
-                    np.save(npy_path, img)
+                # Save the image to npy
+                npy_path = os.path.join(outdir, "{}.npy".format(timestamp.strftime("%Y_%m_%d")))
+                np.save(npy_path, imgi)
         except Exception as e:
             print(f"Error processing {path}: {e}")
             continue

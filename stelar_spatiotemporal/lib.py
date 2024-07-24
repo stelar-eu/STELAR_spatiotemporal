@@ -78,20 +78,25 @@ def open_rasterio(path:str):
     if path.startswith("s3://"):
         endpoint = os.environ.get("MINIO_ENDPOINT_URL").replace("http://", "").replace("https://", "")
         with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN='YES', AWS_VIRTUAL_HOSTING=False, AWS_S3_ENDPOINT=endpoint):
-            return rasterio.open(path)
+            with rasterio.open(path) as src:
+                return src.read(), src.profile
     else:
-        return rasterio.open(path)
+        with rasterio.open(path) as src:
+            return src.read(), src.profile
     
-def get_rasterio_bbox(src:rasterio.DatasetReader):
-    bbox = rasterio.transform.array_bounds(src.height, src.width, src.transform)
-    crs = CRS(src.crs.to_string())
+def get_rasterio_bbox(profile:dict):
+    bbox = rasterio.transform.array_bounds(profile['height'], profile["width"], profile["transform"])
+    crs = CRS(profile["crs"].to_string())
     return BBox(bbox, crs)
 
-def get_rasterio_timestamps(src:rasterio.DatasetReader, path:str):
+def get_rasterio_timestamps(profile:dict, path:str):
     # See if there are timestamps in the metadata in format YYYYMMDD
-    timestamps = src.tags().get("TIFFTAG_DATETIME").split(" ") if "TIFFTAG_DATETIME" in src.tags() else None
+    timestamps = None
+    if 'tags' in profile.keys():
+        if "TIFFTAG_DATETIME" in profile['tags']:
+            timestamps = [profile['tags']["TIFFTAG_DATETIME"]]
 
-    if timestamps is None and src.count == 1:
+    if timestamps is None and profile["count"] == 1:
         # Check if there is a timestamp in the filename in the format YYYYMMDD
         filename = os.path.basename(path)
         timestamps = re.search(r"\d{8}", filename)
