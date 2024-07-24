@@ -75,10 +75,12 @@ def fetch_image(url: str) -> np.ndarray:
 
 def open_rasterio(path:str):
     """Open a rasterio dataset"""
-    fs = get_filesystem(path)
-    with fs.open(path, 'rb') as f:
-        return rasterio.open(f)
-    # return MemoryFile(fs.open(path, 'rb')).open()
+    if path.startswith("s3://"):
+        endpoint = os.environ.get("MINIO_ENDPOINT_URL").replace("http://", "").replace("https://", "")
+        with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN='YES', AWS_VIRTUAL_HOSTING=False, AWS_S3_ENDPOINT=endpoint):
+            return rasterio.open(path)
+    else:
+        return rasterio.open(path)
     
 def get_rasterio_bbox(src:rasterio.DatasetReader):
     bbox = rasterio.transform.array_bounds(src.height, src.width, src.transform)
