@@ -18,7 +18,7 @@ from ..lib import *
 from ..io import S3FileSystem
 
 
-def unpack_contours(df_filename: str, threshold: float = 0.6) -> gpd.GeoDataFrame:
+def unpack_contours(df_filename: str, threshold: float = 0.8) -> gpd.GeoDataFrame:
     """ Convert multipolygon contour row above given threshold into multiple Polygon rows. """
     df = gpd.read_file(df_filename)
     if len(df) <= 2:
@@ -165,7 +165,7 @@ def prediction_to_tiff(eop_path:str, outdir:str):
     return tiff_path
 
 
-def vectorize(eop_path:str, outdir:str, threshold:float=0.51):
+def vectorize(eop_path:str, outdir:str, threshold:float=0.8):
     """Contour single eopatch"""
 
     eop_name = os.path.basename(eop_path)
@@ -181,7 +181,7 @@ def vectorize(eop_path:str, outdir:str, threshold:float=0.51):
     tiff_path = prediction_to_tiff(eop_path, outdir)
 
     # Vectorize tiff file using gdal
-    gdal_str = f"gdal_contour -of gpkg {tiff_path} {vec_path} -i {threshold} -amin amin -amax amax -p > /dev/null"
+    gdal_str = f"gdal_contour -of gpkg {tiff_path} {vec_path} -fl {threshold} -amin amin -amax amax -p > /dev/null"
     os.system(gdal_str)
 
     # Unpack contours from tiff file
@@ -199,10 +199,10 @@ def vectorize(eop_path:str, outdir:str, threshold:float=0.51):
     return df
 
 
-def vectorize_patchlets(patchlet_dir:str, outdir:str, n_jobs:int=8):
+def vectorize_patchlets(patchlet_dir:str, outdir:str, n_jobs:int=8, threshold:float=0.8):
     patchlet_paths = glob.glob(os.path.join(patchlet_dir, "*"))
 
-    multiprocess_map(func=vectorize, object_list=patchlet_paths, n_jobs=n_jobs, outdir=outdir)
+    multiprocess_map(func=vectorize, object_list=patchlet_paths, n_jobs=n_jobs, outdir=outdir, threshold=threshold)
 
     # Delete empty tiff directory
     tiff_dir = os.path.join(outdir, "tiffs")
