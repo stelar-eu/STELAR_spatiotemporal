@@ -248,9 +248,21 @@ def combine_patchlet_shapes(contours_dir:str, outpath:str, crs:CRS=CRS('32630'),
 
     if len(shapes) == 0:
         raise ValueError("No shapes found")
-
+    
     # Combine shapes recursively
-    combined_shapes = combine_shapes_recursive(shapes, 0, len(shapes) - 1, crs=crs)
+    # combined_shapes = combine_shapes_recursive(shapes, 0, len(shapes) - 1, crs=crs)
+
+    # Flatten the list of shapes
+    for shape in shapes:
+        if len(shape) > 0:
+            shapes_flat += shape
+
+    # Combine shapes
+    print("Combining shapes", end="\r")
+    if len(shapes_flat) > 0:
+        combined_shapes = list(unary_union(shapes_flat).geoms)
+    else:
+        combined_shapes = []
 
     # Filter by area
     print("Filtering final shapefile by area", end="\r")
