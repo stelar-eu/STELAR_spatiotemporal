@@ -253,6 +253,7 @@ def combine_patchlet_shapes(contours_dir:str, outpath:str, crs:CRS=CRS('32630'),
     # combined_shapes = combine_shapes_recursive(shapes, 0, len(shapes) - 1, crs=crs)
 
     # Flatten the list of shapes
+    shapes_flat = []
     for shape in shapes:
         if len(shape) > 0:
             shapes_flat += shape
