@@ -8,7 +8,7 @@ To install the package, simply run:
 ```
 pip install git+https://github.com/stelar-eu/STELAR_spatiotemporal.git@master
 ```
-.
+
 ## Usage
 
 To use the package, import it in your Python code:
