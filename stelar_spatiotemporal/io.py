@@ -50,7 +50,7 @@ class S3FileSystem(S3FileSystem):
         elif not src.startswith("s3://") and dst.startswith("s3://"):
             # Move from local to S3
             super().put(src, dst)
-            os.remove(src)
+            # os.remove(src)
         else:
             # Move from local to local
             os.rename(src, dst)

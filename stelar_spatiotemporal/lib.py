@@ -273,8 +273,10 @@ def get_s3_filesystem(path:str):
     MINIO_ENDPOINT_URL = os.environ.get("MINIO_ENDPOINT_URL")
     if not MINIO_ENDPOINT_URL:
         raise ValueError("MINIO_ENDPOINT_URL not set")
+    
+    MINIO_SESSION_TOKEN = os.environ.get("MINIO_SESSION_TOKEN")
 
-    return S3FileSystem(key=MINIO_ACCESS_KEY, secret=MINIO_SECRET_KEY, endpoint_url=MINIO_ENDPOINT_URL)
+    return S3FileSystem(key=MINIO_ACCESS_KEY, secret=MINIO_SECRET_KEY, endpoint_url=MINIO_ENDPOINT_URL, token=MINIO_SESSION_TOKEN)
         
 
 def get_local_filesystem(path:str):

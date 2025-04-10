@@ -448,19 +448,19 @@ def combine_rgb_npys_into_eopatch(bands_data_package:BandsDataPackage, outdir:st
     # Check if all bands have the necessary segment dates
     for band_data_package in bands:
         for segment_date in dates:
-            if not os.path.exists(os.path.join(band_data_package.BAND_PATH, segment_date.strftime(f"{DATE_FORMAT}.npy"))):
-                raise ValueError(f"Date {segment_date} not found in {band_data_package.BAND_PATH}")
+            if not os.path.exists(os.path.join(band_data_package.BAND_DIR, segment_date.strftime(f"{DATE_FORMAT}.npy"))):
+                raise ValueError(f"Date {segment_date} not found in {band_data_package.BAND_DIR}")
 
     # Combine the segment dates into one eopatch per band
     print("Combining segment dates into one eopatch per band")
     eop_paths = []
     for band_data_package in bands:
-        bbox = load_bbox(os.path.join(band_data_package.BAND_PATH, "bbox.pkl"))
+        bbox = load_bbox(os.path.join(band_data_package.BAND_DIR, "bbox.pkl"))
 
         outpath = os.path.join(outdir, band_data_package.BAND_NAME + "_eopatch")
         eop_paths += [outpath]
 
-        npy_paths = [os.path.join(band_data_package.BAND_PATH, date.strftime(f"{DATE_FORMAT}.npy")) for date in dates]
+        npy_paths = [os.path.join(band_data_package.BAND_DIR, date.strftime(f"{DATE_FORMAT}.npy")) for date in dates]
 
         combine_npys_into_eopatches(
             npy_paths=npy_paths,
