@@ -244,7 +244,14 @@ def combine_patchlet_shapes(contours_dir:str, outpath:str, crs:CRS=CRS('32630'),
     vec_paths = glob.glob(os.path.join(contours_dir, "*.gpkg"))
 
     # Read all shapes
-    shapes = [gpd.read_file(vec_path).geometry.tolist() for vec_path in vec_paths]
+    dfs = [gpd.read_file(vec_path) for vec_path in vec_paths]
+
+    # Map all dfs to the same CRS and get shapes
+    shapes = []
+    for df in dfs:
+        if df.crs != crs:
+            df.to_crs(crs, inplace=True)
+        shapes += df.geometry.tolist()
 
     if len(shapes) == 0:
         raise ValueError("No shapes found")

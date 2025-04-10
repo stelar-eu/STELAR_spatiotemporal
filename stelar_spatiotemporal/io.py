@@ -26,12 +26,8 @@ class LocalFileSystem(OSFS):
         if src.startswith("s3://") or dst.startswith("s3://"):
             raise ValueError("Cannot move files between local and S3 filesystems using a LocalFileSystem")
 
-        # Remove root path from paths
-        src = src.replace(self.root_path, '')
-        dst = dst.replace(self.root_path, '')
-
-        # Move the file
-        super().move(src, dst, overwrite)
+        # Move from local to local
+        os.rename(src, dst)
 
 class S3FileSystem(S3FileSystem):
     def __init__(self, key=None, secret=None, endpoint_url=None, *args, **kwargs):
