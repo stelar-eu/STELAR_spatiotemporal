@@ -6,6 +6,7 @@ import glob
 from pyproj.crs.crs import CRS
 from shapely import unary_union
 from shapely.geometry.base import BaseGeometry
+from shapely.geometry import box
 import shutil
 import datetime as dt
 import math
@@ -150,9 +151,6 @@ def segment_patchlets(modeldir:str, patchlet_dir:str):
 def prediction_to_tiff(eop_path:str, outdir:str):
     path_elements = eop_path.split("/")
     patchlet_name = path_elements[-1]
-    tile_name = path_elements[-2]
-
-    eop = EOPatch.load(eop_path, lazy_loading=True)
 
     tiff_dir = os.path.join(outdir, "tiffs")
     os.makedirs(tiff_dir, exist_ok=True)
@@ -187,14 +185,14 @@ def vectorize(eop_path:str, outdir:str, threshold:float=0.8):
     # Unpack contours from tiff file
     df = unpack_contours(vec_path, threshold)
 
-    # Remove temporary file
-    os.remove(vec_path)
+    # Remove existing file
+    try:
+        os.remove(vec_path)
+    except FileNotFoundError or OSError:
+        pass
 
     # Save as geopackage
     df.to_file(vec_path, driver='GPKG', mode='w')
-
-    # Remove tiff file
-    os.remove(tiff_path)
 
     return df
 
@@ -239,42 +237,71 @@ def combine_shapes_recursive(shapes:list, left:list, right:list, crs:CRS=CRS('32
     return out
 
 
-def combine_patchlet_shapes(contours_dir:str, outpath:str, crs:CRS=CRS('32630'), min_area:int = 0, max_area:int = 500000):
+def combine_shapes_overlapping(dfs:list, crs:CRS=None, min_area:int = 0, max_area:int = 500000):
+    """
+    Latest approach to merging on shapes based on overlapping bounding boxes of the pandas dataframes.
+    """
+
+    # Map all dfs to the same CRS, get the shapes, and the bounding boxes
+    shapes = []
+    boxes = []
+    for df in dfs:
+        if crs is None: # if no crs is given, use the first one
+            crs = df.crs
+        if df.crs != crs: # if crs is different, reproject to it
+            df.to_crs(crs, inplace=True)
+        if len(df) == 0:
+            continue
+
+        shapes += df.geometry.tolist()
+        boxes.append(box(*df.geometry.total_bounds))
+
+    print("Total number of shapes before combining and filtering: ", len(shapes))
+
+    # Get the union of intersections of all bboxes (ie the area of potential overlap)
+    total_intersection = unary_union([box.intersection(other_box) for box in boxes for other_box in boxes if box != other_box])
+
+    # Create a global dataframe with all fields
+    global_df = pd.concat(dfs)
+
+    # Keep only the 'real' fields
+    global_df = global_df[global_df.geometry.area < max_area]
+
+    # Get the intersection of all fields (i.e., keep only the fields in global_df that have some area in common with shape_df)
+    isct_mask = global_df.intersects(total_intersection)
+
+    isct_df = global_df[isct_mask]
+
+    # Take the union of the fields in the sntersection to make sure we do not have duplicates
+    isct_df = isct_df.dissolve().explode()
+
+    # Get the difference of all fields (i.e., keep only the fields in global_df that do not have any area in common with shape_df)
+    diff_df = global_df[~isct_mask]
+
+    # Now combine the intersection and difference dataframes to get the final dataframe
+    final_df = pd.concat([isct_df, diff_df], ignore_index=True)
+
+    # Post-filter the final dataframe on area
+    final_df = final_df[final_df.geometry.area > min_area]
+    final_df = final_df[final_df.geometry.area < max_area]
+
+    print("Total number of shapes after combining and filtering: ", len(final_df))
+
+    return final_df
+
+
+def combine_patchlet_shapes(contours_dir:str, outpath:str, crs:CRS=None, min_area:int = 0, max_area:int = 500000):
     # Get all patchlet vector files
     vec_paths = glob.glob(os.path.join(contours_dir, "*.gpkg"))
 
     # Read all shapes
     dfs = [gpd.read_file(vec_path) for vec_path in vec_paths]
 
-    # Map all dfs to the same CRS and get shapes
-    shapes = []
-    for df in dfs:
-        if df.crs != crs:
-            df.to_crs(crs, inplace=True)
-        shapes += df.geometry.tolist()
-
-    if len(shapes) == 0:
-        raise ValueError("No shapes found")
-    
-    # Combine shapes recursively
-    # combined_shapes = combine_shapes_recursive(shapes, 0, len(shapes) - 1, crs=crs)
-
-    # Flatten the list of shapes
-    shapes_flat = []
-    for shape in shapes:
-        if len(shape) > 0:
-            shapes_flat += shape
-
     # Combine shapes
     print("Combining shapes", end="\r")
-    if len(shapes_flat) > 0:
-        combined_shapes = list(unary_union(shapes_flat).geoms)
-    else:
-        combined_shapes = []
+    df = combine_shapes_overlapping(dfs, crs, min_area, max_area)
 
     # Filter by area
-    print("Filtering final shapefile by area", end="\r")
-    df = gpd.GeoDataFrame(geometry=combined_shapes, crs=crs)
     df = df[df.area > min_area]
     df = df[df.area < max_area]
 
@@ -282,11 +309,17 @@ def combine_patchlet_shapes(contours_dir:str, outpath:str, crs:CRS=CRS('32630'),
     print("Saving final result", end="\r")
     temp_path = os.path.join("/tmp", os.path.basename(outpath))
     df.to_file(temp_path, mode='w')
+    
+    # Ensure file is fully written by forcing filesystem sync
+    with open(temp_path, 'r') as f:
+        os.fsync(f.fileno())
 
     # Move to final location
     print("Moving to final location", end="\r")
     filesystem = get_filesystem(outpath)
     filesystem.move(temp_path, outpath, overwrite=True)
+
+    return len(df)
 
 
 # def combine_npys(datadir: str, 
