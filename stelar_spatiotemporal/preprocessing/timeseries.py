@@ -368,6 +368,10 @@ def lai_to_csv_field(eop_paths:list, fields_path:str, outdir:str, nfields:int = 
                 eop = EOPatch.load(eop_path, lazy_loading=True)
                 datetimes = eop.timestamp
 
+                # Make sure the fields are in the same coordinate system as the eopatch
+                if fields.crs != eop.bbox.crs:
+                    fields = fields.to_crs(eop.bbox.crs.ogc_string())
+
                 # 1. Save the eopatches as tiff if necessary
                 print(f"1. Temporarily saving eopatch as tiff")
                 tiff_path = os.path.join(tif_dir, os.path.basename(eop_path) + ".tiff")

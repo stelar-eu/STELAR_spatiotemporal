@@ -76,8 +76,13 @@ def fetch_image(url: str) -> np.ndarray:
 def open_rasterio(path:str):
     """Open a rasterio dataset"""
     if path.startswith("s3://"):
-        endpoint = os.environ.get("MINIO_ENDPOINT_URL").replace("http://", "").replace("https://", "")
-        with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN='YES', AWS_VIRTUAL_HOSTING=False, AWS_S3_ENDPOINT=endpoint):
+        key = os.environ.get("MINIO_ACCESS_KEY")
+        secret = os.environ.get("MINIO_SECRET_KEY")
+        token = os.environ.get("MINIO_SESSION_TOKEN")
+        endpoint = os.environ.get("MINIO_ENDPOINT_URL").replace("https://", "").replace("http://", "")
+
+        with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN='YES', AWS_VIRTUAL_HOSTING=False, AWS_S3_ENDPOINT=endpoint,
+        aws_access_key_id=key, aws_secret_access_key=secret, aws_session_token=token):
             with rasterio.open(path) as src:
                 return src.read(), src.profile
     else:

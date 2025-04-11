@@ -5,7 +5,7 @@ from pystac_client import Client
 from shapely import Geometry
 from shapely.geometry import shape
 import json
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Text
 import cv2
 import numpy as np
 import os
@@ -433,20 +433,14 @@ def combine_dates_for_eopatch(eop_name: str, eop_paths:list, outdir:str = None, 
     # Save the combined patchlet
     eopatch.save(os.path.join(outdir, eop_name), overwrite_permission=OverwritePermission.OVERWRITE_PATCH)
 
-def unpack_tif(indir: str, outdir:str, extension:str = 'tiff'):
-    fs = get_filesystem(indir)
-    paths = fs.glob(os.path.join(indir, "*.{}".format(extension)))
-
-    if len(paths) == 0:
-        raise ValueError("No {} files found in the input folder.".format(extension))
-    
+def unpack_tif(image_paths: List[Text], outdir:str, extension:str = 'TIF'):
     os.makedirs(outdir, exist_ok=True)
     
     # Unpack the TIF files and save to npy
-    print(f"Unpacking {len(paths)} files...")
+    print(f"Unpacking {len(image_paths)} files...")
     gbbox = None
-    for i,path in enumerate(paths):
-        print(f"Processing {i+1}/{len(paths)}", end="\r")
+    for i,path in enumerate(image_paths):
+        print(f"Processing {i+1}/{len(image_paths)}", end="\r")
 
         # Open the raster
         try:
