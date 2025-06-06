@@ -202,12 +202,6 @@ def vectorize_patchlets(patchlet_dir:str, outdir:str, n_jobs:int=8, threshold:fl
 
     multiprocess_map(func=vectorize, object_list=patchlet_paths, n_jobs=n_jobs, outdir=outdir, threshold=threshold)
 
-    # Delete empty tiff directory
-    tiff_dir = os.path.join(outdir, "tiffs")
-    if os.path.exists(tiff_dir):
-        os.rmdir(tiff_dir)
-
-
 def combine_shapes(s1:BaseGeometry,s2:BaseGeometry):
     """ Combine two lists of shapes"""
     combined_list = s1 + s2
