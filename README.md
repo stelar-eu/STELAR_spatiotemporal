@@ -2,7 +2,7 @@
 
 This package is part of the EU STELAR project and provides tools for processing spatiotemporal data. The package includes functionality for field delineation (i.e., segmentation) of satellite images, extracting LAI timseries out of the images, and interpolating cloud covers, among others.
 
-## Installation
+## Installation.
 
 To install the package, simply run:
 ```
