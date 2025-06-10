@@ -96,23 +96,29 @@ def get_rasterio_bbox(profile:dict):
 
 def get_rasterio_timestamps(profile:dict, path:str):
     # See if there are timestamps in the metadata in format YYYYMMDD
+    fmt = "%Y%m%d"
     timestamps = None
     if 'tags' in profile.keys():
         if "TIFFTAG_DATETIME" in profile['tags']:
             timestamps = [profile['tags']["TIFFTAG_DATETIME"]]
 
     if timestamps is None and profile["count"] == 1:
-        # Check if there is a timestamp in the filename in the format YYYYMMDD
+        # Check if there is a timestamp in the filename in the format YYYYMMDD or YYMMDD
         filename = os.path.basename(path)
         timestamps = re.search(r"\d{8}", filename)
         if timestamps:
             timestamps = [timestamps.group()]
+        else:
+            timestamps = re.search(r"\d{6}", filename)
+            if timestamps:
+                timestamps = [timestamps.group()]
+                fmt = "%y%m%d"
 
     if not timestamps:
         raise ValueError("No timestamps found in the metadata or the filename.")
 
     # Parse the timestamps
-    return [dt.datetime.strptime(timestamp, "%Y%m%d") for timestamp in timestamps]
+    return [dt.datetime.strptime(timestamp, fmt) for timestamp in timestamps]
 
 def multiprocess_map(func: Callable, object_list: list, n_jobs:int = 4, **kwargs: dict):
     """

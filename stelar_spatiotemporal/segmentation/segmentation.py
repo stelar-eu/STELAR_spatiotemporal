@@ -201,7 +201,7 @@ def vectorize_patchlets(patchlet_dir:str, outdir:str, n_jobs:int=8, threshold:fl
     patchlet_paths = glob.glob(os.path.join(patchlet_dir, "*"))
 
     multiprocess_map(func=vectorize, object_list=patchlet_paths, n_jobs=n_jobs, outdir=outdir, threshold=threshold)
-
+    
 def combine_shapes(s1:BaseGeometry,s2:BaseGeometry):
     """ Combine two lists of shapes"""
     combined_list = s1 + s2
