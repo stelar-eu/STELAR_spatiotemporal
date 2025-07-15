@@ -9,8 +9,6 @@ from multiprocessing import Pool
 from tqdm import tqdm
 from functools import partial
 from typing import Callable
-import skimage.filters.rank as rank
-from skimage.morphology import disk
 import rasterio
 import os
 import pandas as pd
@@ -153,30 +151,7 @@ def combine_temporal(array: np.ndarray) -> np.ndarray:
     return np.nan_to_num(np.nanmedian(array, axis=0))
 
 
-def smooth(array: np.ndarray, disk_size: int = 2) -> np.ndarray:
-    """ Blur input array using a disk element of a given disk size """
-    assert array.ndim == 2
 
-    smoothed = rank.mean(array, disk(disk_size)).astype(np.float32)
-    smoothed = (smoothed - np.min(smoothed)) / (np.max(smoothed) - np.min(smoothed))
-
-    # assert np.sum(~np.isfinite(smoothed)) == 0
-
-    return smoothed
-
-
-def upscale_and_rescale(array: np.ndarray, scale_factor: int = 2) -> np.ndarray:
-    """ Upscale a given array by a given scale factor using bicubic interpolation """
-    assert array.ndim == 2
-
-    height, width = array.shape
-
-    rescaled = np.array(Image.fromarray(array).resize((width * scale_factor, height * scale_factor), Image.BICUBIC))
-    rescaled = (rescaled - np.min(rescaled)) / (np.max(rescaled) - np.min(rescaled))
-
-    # assert np.sum(~np.isfinite(rescaled)) == 0
-
-    return rescaled
 
 
 def export_eopatch_to_tiff(eop_path:str, out_path:str, feature:tuple, nodata:int=0, channel_pos:int=0):
