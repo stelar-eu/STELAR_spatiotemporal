@@ -18,7 +18,7 @@ import stelar_spatiotemporal
 ```
 Then, you can use the various functions provided by the package to process your spatiotemporal data.
 
-## Contributing
+## Contributing.
 If you would like to contribute to the package, please see the CONTRIBUTING.md file for guidelines.
 
 ## License
